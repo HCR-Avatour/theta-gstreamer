@@ -1,13 +1,13 @@
-# TODO rolling
-FROM ubuntu AS build_base
-WORKDIR /build
-
+FROM ubuntu:rolling AS base
 # Prevent apt from asking for user input
 ENV DEBIAN_FRONTEND=noninteractive
-
 RUN apt-get update
-# Basic Build Tools TODO remove tzdata
-RUN apt-get install -y build-essential pkg-config git cmake tzdata
+
+FROM base AS build_base
+WORKDIR /build
+
+# Basic Build Tools
+RUN apt-get install -y build-essential pkg-config git cmake
 # libuvc build dependencies
 RUN apt-get install -y libusb-1.0.0-dev # libjpeg-turbo8-dev
 # GStreamer plugin build dependencies
@@ -53,12 +53,10 @@ RUN cp thetauvc/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 # RUN cp target/release/*.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 
 # Build final image
-# TODO rolling
-FROM ubuntu
+FROM base AS final
 
 # Install GStreamer
-RUN apt-get update
-RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools
+RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-rtsp
 
 # Install Theta Plugins
 COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/local/lib
@@ -70,11 +68,6 @@ COPY --from=gstthetauvc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstthetauvc.so /
 # COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrswebrtc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 # COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrsrtp.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 #COPY --from=simple-whip-client /usr/local/bin/whip-client /usr/local/bin
-
-# TODO: Move this up
-RUN apt-get install -y less
-RUN apt-get install -y gstreamer1.0-rtsp
-# RUN apt-get install -y gstreamer1.0-nice
 
 # Install entrypoint script
 COPY entrypoint.sh /bin/entrypoint
