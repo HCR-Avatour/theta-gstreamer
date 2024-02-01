@@ -1,3 +1,4 @@
+# TODO rolling
 FROM ubuntu AS build_base
 WORKDIR /build
 
@@ -33,11 +34,11 @@ RUN cp thetauvc/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 
 # Build simple-whip-client
 # Produces /usr/local/bin/whip-client
-FROM build_base AS simple-whip-client
-RUN apt-get install -y libjson-glib-dev libsoup2.4-dev
-RUN git clone https://github.com/meetecho/simple-whip-client .
-RUN make
-RUN cp whip-client /usr/local/bin
+# FROM build_base AS simple-whip-client
+# RUN apt-get install -y libjson-glib-dev libsoup2.4-dev
+# RUN git clone https://github.com/meetecho/simple-whip-client .
+# RUN make
+# RUN cp whip-client /usr/local/bin
 
 # Build rswebrtc
 # Produces /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrswebrtc.so
@@ -51,18 +52,30 @@ RUN cp whip-client /usr/local/bin
 # RUN cd target/release && strip libgstrswebrtc.so && strip libgstrsrtp.so
 # RUN cp target/release/*.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 
+# Build final image
+# TODO rolling
 FROM ubuntu
+
+# Install GStreamer
 RUN apt-get update
 RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools
 
+# Install Theta Plugins
 COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/local/lib
 RUN ln -sf libuvc.so.0.0.7 /usr/local/lib/libuvc.so.0
 RUN ln -sf libuvc.so.0 /usr/local/lib/libuvc.so
-COPY --from=simple-whip-client /usr/local/bin/whip-client /usr/local/bin
 COPY --from=gstthetauvc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+
+# Install WebRTC Plugins
 # COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrswebrtc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 # COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrsrtp.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+#COPY --from=simple-whip-client /usr/local/bin/whip-client /usr/local/bin
 
+# TODO: Move this up
 RUN apt-get install -y less
 RUN apt-get install -y gstreamer1.0-rtsp
-RUN apt-get install -y gstreamer1.0-nice
+# RUN apt-get install -y gstreamer1.0-nice
+
+# Install entrypoint script
+COPY entrypoint.sh /bin/entrypoint
+CMD ["entrypoint"]
