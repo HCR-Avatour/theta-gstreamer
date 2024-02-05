@@ -2,6 +2,7 @@ FROM ubuntu:rolling AS base
 # Prevent apt from asking for user input
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
+RUN ln -sf /usr/lib/$(uname -m)-linux-gnu/gstreamer-1.0 /usr/lib/gstreamer-1.0
 
 FROM base AS build_base
 WORKDIR /build
@@ -23,14 +24,14 @@ RUN cmake .
 RUN make install
 
 # Build gstthetauvc
-# Produces /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstthetauvc.so
+# Produces /usr/lib/gstreamer-1.0/gstthetauvc.so
 FROM build_base AS gstthetauvc
 RUN git clone https://github.com/nickel110/gstthetauvc .
 COPY --from=libuvc /usr/local/lib/libuvc.so* /usr/local/lib/
 COPY --from=libuvc /usr/local/include/libuvc/ /usr/local/include/libuvc/
 COPY --from=libuvc /usr/local/lib/pkgconfig/libuvc.pc /usr/local/lib/pkgconfig/
 RUN cd thetauvc && make
-RUN cp thetauvc/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+RUN cp thetauvc/gstthetauvc.so /usr/lib/gstreamer-1.0/
 
 # Build simple-whip-client
 # Produces /usr/local/bin/whip-client
@@ -41,8 +42,8 @@ RUN cp thetauvc/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 # RUN cp whip-client /usr/local/bin
 
 # Build rswebrtc
-# Produces /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrswebrtc.so
-# Produces /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrsrtp.so
+# Produces /usr/lib/gstreamer-1.0/libgstrswebrtc.so
+# Produces /usr/lib/gstreamer-1.0/libgstrsrtp.so
 # FROM build_base AS rswebrtc
 # RUN apt-get install -y cargo libssl-dev libglib2.0-dev
 # RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs .
@@ -50,7 +51,7 @@ RUN cp thetauvc/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 # RUN cd net/webrtc && cargo build --release
 # RUN cd net/rtp && cargo build --release
 # RUN cd target/release && strip libgstrswebrtc.so && strip libgstrsrtp.so
-# RUN cp target/release/*.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+# RUN cp target/release/*.so /usr/lib/gstreamer-1.0/
 
 # Build final image
 FROM base AS final
@@ -61,12 +62,12 @@ RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstre
 # Install Theta Plugins
 COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/local/lib
 RUN ln -sf libuvc.so.0.0.7 /usr/local/lib/libuvc.so.0
-RUN ln -sf libuvc.so.0 /usr/local/lib/libuvc.so
-COPY --from=gstthetauvc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/gstthetauvc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+RUN ln -sf libuvc.so.0 /usr/local/lib/libuvc.so 
+COPY --from=gstthetauvc /usr/lib/gstreamer-1.0/gstthetauvc.so /usr/lib/gstreamer-1.0/
 
 # Install WebRTC Plugins
-# COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrswebrtc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
-# COPY --from=rswebrtc /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrsrtp.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+# COPY --from=rswebrtc /usr/lib/gstreamer-1.0/libgstrswebrtc.so /usr/lib/gstreamer-1.0/
+# COPY --from=rswebrtc /usr/lib/gstreamer-1.0/libgstrsrtp.so /usr/lib/gstreamer-1.0/
 #COPY --from=simple-whip-client /usr/local/bin/whip-client /usr/local/bin
 
 # Install entrypoint script
