@@ -2,7 +2,7 @@ FROM ubuntu:rolling AS base
 # Prevent apt from asking for user input
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
-RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform/
+RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform
 
 FROM base AS build_base
 WORKDIR /build
