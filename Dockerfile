@@ -15,7 +15,7 @@ RUN apt-get install -y libusb-1.0.0-dev # libjpeg-turbo8-dev
 RUN apt-get install -y libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev
 
 # Build modified libuvc
-# Produces /usr/lib/platform/libuvc.so*
+# Produces /usr/local/lib/libuvc.so*
 FROM build_base AS libuvc
 RUN git clone https://github.com/ricohapi/libuvc-theta .
 RUN git remote add upstream https://github.com/libuvc/libuvc && git fetch upstream
@@ -60,7 +60,7 @@ FROM base AS final
 RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-rtsp
 
 # Install Theta Plugins
-COPY --from=libuvc /usr/lib/platform/libuvc.so.0.0.7 /usr/lib/platform/
+COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/lib/platform/
 RUN ln -sf libuvc.so.0.0.7 /usr/lib/platform/libuvc.so.0
 RUN ln -sf libuvc.so.0 /usr/lib/platform/libuvc.so 
 COPY --from=gstthetauvc /usr/lib/platform/gstreamer-1.0/gstthetauvc.so /usr/lib/platform/gstreamer-1.0/
