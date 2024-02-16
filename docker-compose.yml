@@ -5,7 +5,6 @@ services:
     build: .
     volumes:
     - /dev/bus/usb:/dev/bus/usb
-    - ./entrypoint.sh:/usr/bin/entrypoint
     privileged: true
     restart: unless-stopped
 
