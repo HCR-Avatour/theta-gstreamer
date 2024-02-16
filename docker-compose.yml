@@ -1,12 +1,24 @@
+version: "3.8"
+
 services:
   gstreamer:
+    image: ghcr.io/harryjph/theta-gstreamer:arm64
     volumes:
     - /dev/bus/usb:/dev/bus/usb
+    - ./entrypoint.sh:/usr/bin/entrypoint
     privileged: true
     restart: unless-stopped
-    build: .
+
+  reencode:
+    image: nvcr.io/nvidia/deepstream:6.4-samples-multiarch
+    entrypoint: ["sleep", "100000000"]
+
   mediamtx:
     image: bluenviron/mediamtx:latest
     ports:
     - 8554:8554
+    - 8889:8889
+    - 8189:8189/udp
+    environment:
+    - MTX_WEBRTCADDITIONALHOSTS=avatour.duckdns.org
     restart: unless-stopped
