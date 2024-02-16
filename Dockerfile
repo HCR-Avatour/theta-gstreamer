@@ -1,17 +1,33 @@
-FROM ubuntu:rolling AS base
-# Prevent apt from asking for user input
+# Build an Nvidia Deepstream image with GStreamer 1.22 (needs to be built from source)
+FROM nvcr.io/nvidia/deepstream:6.4-samples-multiarch AS nv-gst-1.22
+# Remove old GStreamer
+RUN apt-get remove -y *gstreamer*
+# Install build dependencies
+RUN <<-EOF
+    apt-get update
+    apt-get install -y python3-pip libdrm-dev libmount-dev flex bison libglib2.0-dev    
+    pip3 install meson ninja
+EOF
+# Build GStreamer from source
+RUN <<-EOF
+    # Download sources
+    mkdir /tmp/gst-build
+    cd /tmp/gst-build
+    git clone https://gitlab.freedesktop.org/gstreamer/gstreamer.git .
+    git checkout 1.22.10
+    # Build GStreamer
+    meson build --prefix=/usr
+    ninja -C build/
+    cd build/ && ninja install
+    # Clean up
+    rm -rf /tmp/gst-build
+EOF
+
+# Establish Base for Building Plugins
+FROM ubuntu:rolling AS build_base
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform
-
-FROM nvcr.io/nvidia/deepstream:6.4-samples-multiarch AS nv_base
-# Prevent apt from asking for user input
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform
-
-# Establish Build Base
-FROM base AS build_base
 WORKDIR /build
 # Install Basic Build Tools
 RUN apt-get install -y build-essential pkg-config git cmake
@@ -53,10 +69,8 @@ RUN cd target/release && strip libgstrswebrtc.so && strip libgstrsrtp.so
 RUN cp target/release/*.so /usr/lib/platform/gstreamer-1.0/
 
 # Build final image
-FROM nv_base AS final
-
-# Install GStreamer
-RUN apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-rtsp
+FROM nv-gst-1.22 AS final
+RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform
 
 # Install Theta Plugins
 COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/lib/platform/
