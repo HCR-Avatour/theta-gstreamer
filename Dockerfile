@@ -55,19 +55,6 @@ COPY --from=libuvc /usr/local/lib/pkgconfig/libuvc.pc /usr/local/lib/pkgconfig/
 RUN cd thetauvc && make
 RUN cp thetauvc/gstthetauvc.so /usr/lib/platform/gstreamer-1.0/
 
-# Build rswebrtc
-# Produces /usr/lib/platform/gstreamer-1.0/libgstrswebrtc.so
-# Produces /usr/lib/platform/gstreamer-1.0/libgstrsrtp.so
-FROM build_base AS rswebrtc
-RUN apt-get install -y cargo libssl-dev libglib2.0-dev
-RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs .
-RUN git checkout 0.12.1
-ENV PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
-RUN cd net/webrtc && cargo build --release
-RUN cd net/rtp && cargo build --release
-RUN cd target/release && strip libgstrswebrtc.so && strip libgstrsrtp.so
-RUN cp target/release/*.so /usr/lib/platform/gstreamer-1.0/
-
 # Build final image
 FROM nv-gst-1.22 AS final
 RUN ln -sf /usr/lib/$(uname -m)-linux-gnu /usr/lib/platform
@@ -77,10 +64,6 @@ COPY --from=libuvc /usr/local/lib/libuvc.so.0.0.7 /usr/lib/platform/
 RUN ln -sf libuvc.so.0.0.7 /usr/lib/platform/libuvc.so.0
 RUN ln -sf libuvc.so.0 /usr/lib/platform/libuvc.so 
 COPY --from=gstthetauvc /usr/lib/platform/gstreamer-1.0/gstthetauvc.so /usr/lib/platform/gstreamer-1.0/
-
-# Install WebRTC Plugins
-COPY --from=rswebrtc /usr/lib/platform/gstreamer-1.0/libgstrswebrtc.so /usr/lib/platform/gstreamer-1.0/
-COPY --from=rswebrtc /usr/lib/platform/gstreamer-1.0/libgstrsrtp.so /usr/lib/platform/gstreamer-1.0/
 
 # Install entrypoint script
 COPY entrypoint.sh /bin/entrypoint
