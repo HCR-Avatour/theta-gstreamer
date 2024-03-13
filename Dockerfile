@@ -5,9 +5,11 @@ RUN apt-get remove -y *gstreamer*
 # Install build dependencies
 RUN <<-EOF
     apt-get update
-    apt-get install -y python3-pip libdrm-dev libmount-dev flex bison libglib2.0-dev    
+    apt-get install -y python3-pip libdrm-dev libmount-dev flex bison libglib2.0-dev
     pip3 install meson ninja
 EOF
+# Install audio system so that audio plugins will build
+RUN apt-get install -y alsa-base libasound2-dev
 # Build GStreamer from source
 RUN <<-EOF
     # Download sources
@@ -20,7 +22,7 @@ RUN <<-EOF
     ninja -C build/
     cd build/ && ninja install
     # Clean up
-    rm -rf /tmp/gst-build
+    cd / && rm -rf /tmp/gst-build
 EOF
 
 # Establish Base for Building Plugins
