@@ -68,5 +68,5 @@ RUN ln -sf libuvc.so.0 /usr/lib/platform/libuvc.so
 COPY --from=gstthetauvc /usr/lib/platform/gstreamer-1.0/gstthetauvc.so /usr/lib/platform/gstreamer-1.0/
 
 # Install entrypoint script
-COPY entrypoint.sh /bin/entrypoint
-CMD ["entrypoint"]
+COPY pipeline.sh /bin/pipeline
+CMD ["pipeline"]
